@@ -1,9 +1,9 @@
 import {initializeApp} from 'firebase/app'
 import {
     getAuth,
-    signInWithRedirect,
+    createUserWithEmailAndPassword,
     signInWithPopup,
-    GoogleAuthProvider
+    GoogleAuthProvider,
 } from 'firebase/auth'
 
 import {getFirestore,doc,getDoc,setDoc} from 'firebase/firestore'
@@ -27,23 +27,38 @@ const firebaseConfig = {
 
   export const auth = getAuth()
   export const signInWithGooglePopup = () => signInWithPopup(auth,provider)
-
+ 
   export const db = getFirestore()
-  export const createUserDocumentFromAuth = async(userAuth)=>{
+
+  export const createUserDocumentFromAuth = async(userAuth,additionalInfo)=>{
     // console.log(userAuth)
     const userDocRef = doc(db,'users',userAuth.user.uid);
     const userSnapShot = await getDoc(userDocRef)
     
-    if(!userSnapShot.exits){
+    if(!userSnapShot.exists()){
         // create / set the document with the data from userAuth in my collection
         const {displayName,email} = userAuth.user
         const createdAt = new Date()
         try{
-            await setDoc(userDocRef,{displayName,email,createdAt})
+            await setDoc(userDocRef,
+                {
+                    displayName,
+                    email,
+                    createdAt,
+                    ...additionalInfo
+                })
 
         }catch(error){
             console.log('could not save new user to database',error.message)
         }
+   
     }
-  }
+}
+
+
+  export const createAuthUserWithEmailAndPassword = async (email,password)=>{
+    if(!email || !password) return;
+    const res = await createUserWithEmailAndPassword(auth,email,password)
+    return res
+  } 
 
